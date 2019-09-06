@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package entity;
+
+import "component.proto";
+
+message Entity{
+	bool enabled = 1;
+	uint64 class = 2;
+	uint64 id = 3;
+	repeated component.Component components = 4;
+}

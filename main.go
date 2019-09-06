@@ -1,8 +1,11 @@
 package main;
 import (
+	//Internal
+	//Standard
 	"fmt"
 	"log"
 	"image/color"
+	//External
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 );
@@ -14,158 +17,16 @@ func NewImage_Rect_RGBA( width uint32, height uint32, red uint8, green uint8, bl
 	return new_image;
 }
 
-type Vector_type struct{
-	x float64
-	y float64
-}
-
-type Rectangle_type struct{
-	origin Vector_type
-	magnitude Vector_type
-}
-
-func (rect *Rectangle_type) SetOriginFromCentre( centre Vector_type ){
-	rect.origin.x = (centre.x - (rect.magnitude.x / 2));
-	rect.origin.y = (centre.y - (rect.magnitude.y / 2));
-}
-
-func (vector Vector_type) InRectangle( rect Rectangle_type ) bool{
-	if( (vector.x >= rect.origin.x) && (vector.x <= (rect.origin.x + rect.magnitude.x)) && (vector.y >= rect.origin.y) && (vector.y <= (rect.origin.y + rect.magnitude.y)) ){
-		return true;
-	} else{
-		return false;
-	}
-}
-func (rect Rectangle_type) ContainsVector( vector Vector_type ) bool{
-	if( (vector.x >= rect.origin.x) && (vector.x <= (rect.origin.x + rect.magnitude.x)) && (vector.y >= rect.origin.y) && (vector.y <= (rect.origin.y + rect.magnitude.y)) ){
-		return true;
-	} else{
-		return false;
-	}
-}
-
-const(
-	INTERSECTION_NONE uint8 = 0 //No collision
-	INTERSECTION_INTERSECT uint8 = 1 //One or more corners overlap but the rect_a centre is not in rect_b
-	INTERSECTION_ON uint8 = 2 //rect_a's centre is within the bounds of rect_b
-	INTERSECTION_IN uint8 = 4 //rect_a is contained entirely within rect_b
-	INTERSECTION_HOLDS uint8 = 8 //rect_b's centre is contained within rect_a
-	INTERSECTION_CONTAINS uint8 = 16 //rect_b is contained entirely within rect_a
-);
-const(
-	EDGE_NONE uint16 = 0
-	EDGE_TOPLEFT uint16 = 1
-	EDGE_TOPCENTRE uint16 = 2
-	EDGE_TOPRIGHT uint16 = 4
-	EDGE_CENTRELEFT uint16 = 8
-	EDGE_CENTRE uint16 = 16
-	EDGE_CENTRERIGHT uint16 = 32
-	EDGE_BOTTOMLEFT uint16 = 64
-	EDGE_BOTTOMCENTRE uint16 = 128
-	EDGE_BOTTOMRIGHT uint16 = 256
-	EDGE_SUMOFALLEDGES uint16 = 511
-);
-type Intersection_type struct{
-	intersection uint8
-	edges uint16 //Edges rect_a has within rect_b
-	centre_from_centre Vector_type //The difference/distance rect_a's centre is from rect_b's centre
-}
-
-func (rect_a Rectangle_type) IntersectRectangle( rect_b Rectangle_type ) Intersection_type{
-//	if( (rect_a.origin.x > rect_b.origin.x) && ((rect_a.origin.x + rect_a.magnitude.x) < (rect_b.origin.x + rect_b.magnitude.x)) && (rect_a.origin.y > rect_b.origin.y) && ((rect_a.origin.y + rect_a.magnitude.y) < (rect_b.origin.y + rect_b.magnitude.y)) ){
-//		return true;
-//	} else{
-//		return false;
-//	}
-	var _return Intersection_type;
-	//TL
-	if( rect_b.ContainsVector( Vector_type{rect_a.origin.x,rect_a.origin.y,} ) == true ){
-		_return.edges = (_return.edges | EDGE_TOPLEFT);
-	}
-	//TC
-	if( rect_b.ContainsVector( Vector_type{(rect_a.origin.x + (rect_a.magnitude.x / 2)),rect_a.origin.y,} ) == true ){
-		_return.edges = (_return.edges | EDGE_TOPCENTRE);
-	}
-	//TR
-	if( rect_b.ContainsVector( Vector_type{(rect_a.origin.x + rect_a.magnitude.x),rect_a.origin.y,} ) == true ){
-		_return.edges = (_return.edges | EDGE_TOPRIGHT);
-	}
-	//CL
-	if( rect_b.ContainsVector( Vector_type{rect_a.origin.x,(rect_a.origin.y + (rect_a.magnitude.y / 2)),} ) == true ){
-		_return.edges = (_return.edges | EDGE_CENTRELEFT);
-	}
-	//C
-	if( rect_b.ContainsVector( Vector_type{(rect_a.origin.x + (rect_a.magnitude.x / 2)),(rect_a.origin.y + (rect_a.magnitude.y / 2)),} ) == true ){
-		_return.edges = (_return.edges | EDGE_CENTRE);
-	}
-	//CR
-	if( rect_b.ContainsVector( Vector_type{(rect_a.origin.x + rect_a.magnitude.x),(rect_a.origin.y + (rect_a.magnitude.y / 2)),} ) == true ){
-		_return.edges = (_return.edges | EDGE_CENTRERIGHT);
-	}
-	//BL
-	if( rect_b.ContainsVector( Vector_type{rect_a.origin.x,(rect_a.origin.y + rect_a.magnitude.y),} ) == true ){
-		_return.edges = (_return.edges | EDGE_BOTTOMLEFT);
-	}
-	//BC
-	if( rect_b.ContainsVector( Vector_type{(rect_a.origin.x + (rect_a.magnitude.x / 2)),(rect_a.origin.y + rect_a.magnitude.y),} ) == true ){
-		_return.edges = (_return.edges | EDGE_BOTTOMCENTRE);
-	}
-	//BR
-	if( rect_b.ContainsVector( Vector_type{(rect_a.origin.x + rect_a.magnitude.x),(rect_a.origin.y + rect_a.magnitude.y),} ) == true ){
-		_return.edges = (_return.edges | EDGE_BOTTOMRIGHT);
-	}
-	//Intersection
-	if( _return.edges == EDGE_SUMOFALLEDGES /*Sum of all edges*/ ){
-		_return.intersection = (_return.intersection | INTERSECTION_IN);
-	}
-	if( (_return.edges & EDGE_CENTRE) == EDGE_CENTRE ){
-		_return.intersection = (_return.intersection | INTERSECTION_ON);
-	}
-	if( _return.edges > 0 ){
-		_return.intersection = (_return.intersection | INTERSECTION_INTERSECT);
-	}
-	//Centre from centre
-	_return.centre_from_centre.x = (rect_a.origin.x + (rect_a.magnitude.x / 2)) - (rect_b.origin.x + (rect_b.magnitude.x / 2));
-	_return.centre_from_centre.y = (rect_a.origin.y + (rect_a.magnitude.y / 2)) - (rect_b.origin.y + (rect_b.magnitude.y / 2));
-	return _return;
-}
-
-func MutualIntersectRectangles( rect_a Rectangle_type, rect_b Rectangle_type ) [2]Intersection_type{
-	var _return [2]Intersection_type;
-	_return[0] = rect_a.IntersectRectangle( rect_b );
-	_return[1] = rect_b.IntersectRectangle( rect_a );
-	if( (_return[0].intersection & INTERSECTION_IN) == INTERSECTION_IN ){
-		_return[1].intersection = (_return[1].intersection | INTERSECTION_CONTAINS);
-	}
-	if( (_return[1].intersection & INTERSECTION_IN) == INTERSECTION_IN ){
-		_return[0].intersection = (_return[0].intersection | INTERSECTION_CONTAINS);
-	}
-	if( (_return[0].intersection & INTERSECTION_ON) == INTERSECTION_ON ){
-		_return[1].intersection = (_return[1].intersection | INTERSECTION_HOLDS);
-	}
-	if( (_return[1].intersection & INTERSECTION_ON) == INTERSECTION_ON ){
-		_return[0].intersection = (_return[0].intersection | INTERSECTION_HOLDS);
-	}
-	return _return;
-}
-
 type Action_type struct{
 	mapping ebiten.Key
 	state int64
 }
 
+//graphic.go
 type Graphic_type struct{
 	image_index uint8
 	op *ebiten.DrawImageOptions
 }
-
-/*func (graphic *Graphic_type) Set_Rect_Colour( width uint32, height uint32, red uint8, green uint8, blue uint8, alpha uint8 ) *Graphic_type{
-	graphic.image, _ = ebiten.NewImage( int(width), int(height), ebiten.FilterDefault );
-	graphic.image.Fill(color.RGBA{red,green,blue,alpha,});
-	graphic.op = &ebiten.DrawImageOptions{};
-	return graphic;
-}*/
-
 func NewGraphic( image_index uint8 ) Graphic_type{
 	var new_graphic Graphic_type;
 	new_graphic.image_index = image_index;
@@ -193,6 +54,11 @@ type ActorStats_type struct{
 }
 
 const(
+	//Box_type.alignment
+	ALIGNMENT_UNIVERSAL uint8 = 0
+	ALIGNMENT_PLAYER uint8 = 1
+	ALIGNMENT_ENEMY uint8 = 2
+	//Box_type.boxtype
 	BOXTYPE_COLLISION uint8 = 1
 	BOXTYPE_HIT uint8 = 2
 	BOXTYPE_HURT uint8 = 4
@@ -234,8 +100,45 @@ type Projectile_type struct{
 	velocity Vector_type
 }
 
+/**
+* @fn Projectile_New
+* @brief Create a new projectile.
+* @param alignment uint8 [in] The alignment of the projectile.
+* @param damage uint32 [in] The damage dealt by the projectile.
+* @param penetration uint32 [in] The number of enemies the projectile can pass through before disappearing.
+* @param centre Vector_type [in] The centre vector of the projectile.
+* @param velocity Vector_type [in] The velocity vector of the projectile.
+* @return Projectile_type
+* @retval nil Failure
+* @retval <Projectile> Success
+*/
+func  Projectile_New( alignment uint8, damage uint32, penetration uint32, centre Vector_type, velocity Vector_type ) Projectile_type{
+	/* Variables */
+	var _return Projectile_type = Projectile_type{
+		true,
+		NewGraphic(GRAPHIC_INDEX_PROJECTILE),
+		Box_type{
+			alignment,
+			(BOXTYPE_HIT),
+			Vector_type{ float64(damage), float64(penetration), },
+			Rectangle_type{
+				Vector_type{ 0, 0, },
+				Vector_type{ 16, 20, },
+			},
+		},
+		centre,
+		velocity,
+	};
+	/* Parametres */
+	/* Function */
+	/* Return */
+	return _return;
+}
+
+
 type SpaceInvaders_Scene_type struct{
 	rect Rectangle_type
+	images []*ebiten.Image
 	player_ship PlayerShip_type
 	enemy_ships []EnemyShip_type
 	projectiles []Projectile_type
@@ -347,6 +250,29 @@ func (scene *SpaceInvaders_Scene_type) AddProjectile( x float64, y float64, alig
 		}
 	}
 }
+/**
+* @fn AddProjectile
+* @brief A method to add a new projectile to the scene.
+* @struct scene *Scene_type
+* @param alignment uint8 [in] 
+* @param centre Vector_type [in] 
+* @param velocity Vector_type [in] 
+* @return uint8
+* @retval 0 Success
+* @retval 1 Not Supported
+* @retval >1 Error
+*/
+func (scene *Scene_type) AddProjectile( alignment uint8, centre Vector_type, velocity Vector_type ) uint8{
+	var _return uint8 = nil;
+	/* Variables */
+	
+	/* Parametres */
+
+	/* Function */
+	/* Return */
+	return _return;
+}
+
 
 //Global Variables
 var Actions_map = map[string]Action_type{
@@ -356,9 +282,9 @@ var Actions_map = map[string]Action_type{
 	"fire": {ebiten.KeySpace,0,},
 };
 var SpaceInvaders_Images = []*ebiten.Image{
-	NewImage_Rect_RGBA( 32, 16, 0, 255, 0, 255 ),
-	NewImage_Rect_RGBA( 20, 20, 255, 128, 0, 255 ),
-	NewImage_Rect_RGBA( 16, 20, 0, 0, 255, 255),
+	NewImage_Rect_RGBA( 32, 16, 0, 255, 0, 255 ), //Player ship
+	NewImage_Rect_RGBA( 20, 20, 255, 128, 0, 255 ), //Enemy ship
+	NewImage_Rect_RGBA( 16, 20, 0, 0, 255, 255), //Projectile
 };
 var Scene SpaceInvaders_Scene_type;
 
@@ -486,6 +412,7 @@ func logic(){
 	}
 	if( Actions_map["fire"].state == 1 ){
 		if( Scene.player_ship.meters.sp.current > 30 ){
+			var projectile Projectile_type = Projectile_New( alignment, damage, penetration, centre, velocity , centre, velocity )
 			Scene.AddProjectile( Scene.player_ship.centre.x , (Scene.player_ship.centre.y - 32), 0 );
 			Scene.player_ship.meters.sp.current -= 30;
 		}

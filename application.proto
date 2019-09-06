@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package application;
+
+enum State{
+	STATE_UNSPECIFIED = 0;
+	STATE_INITIALISING = 1;
+	STATE_QUITING = 2;
+	STATE_RUNNING = 3;
+	STATE_PAUSED = 4;
+	STATE_STOPPED = 5;
+}
+
+message DynamicVariable{
+	uint64 id = 1;
+	double current = 2;
+	double minimum = 3;
+	double maximum = 4;
+}
+
+message Thread{
+	uint32 id = 1;
+	State state = 2;
+}
+
+message Application{
+	State state = 1;
+	Time start_time = 2;
+	Permissions permissions = 3;
+	ApplcationSettings settings = 4;
+	Middleware middleware = 5;
+	Client client{
+		State state = 1;
+		uint64 iterations = 2;
+		uint64 frames = 3;
+		ClientSettings settngs = 4;
+		repeated Thread threads = 5;
+		Server server{
+			Engine engine{ //The Game
+				Simulation simulation{
+					uint32 state;
+					float speed;
+					repeated Rule rules{
+					Scene scene{
+						repeated Rule rules{
+						uint64 id = 100;
+						repeated DynamicVariables dynamic_variables{
+							uint64 id = 200;
+							double current = 201;
+							double minimum = 202;
+							double maximum = 203;
+						};
+						repeated Entity entities{
+							uint64 class = 1001;
+							uint64 id = 1001;
+

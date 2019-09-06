@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package component;
+
+message Component{
+	bool enabled = 1;
+	uint64 class = 2;
+	uint64 id = 3;
+}

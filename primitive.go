@@ -4,7 +4,7 @@
 * @author Anadian
 * @copyright MITlicensetm(2019,Canosw)
 */
-package primitive;
+package main;
 
 //Dependencies
 import( 
