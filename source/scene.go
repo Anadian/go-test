@@ -10,7 +10,7 @@ package scene;
 import(
 	//Internal
 	//Standard
-	"time"
+	//"time"
 	//External
 );
 
@@ -21,7 +21,7 @@ const(
 );
 
 //Types, structs, and methods
-type Appilication_type struct{
+/*type Appilication_type struct{
 	IsRunning bool
 	IsAwake bool
 	IsFocused bool
@@ -42,7 +42,14 @@ type Scene_interface{
 	GetRule( rule_index uint8 ) Rule_interface
 	AddRule( rule Rule_interface )
 	ClearRules()
-}
+}*/
+//Rules are functions which are run every tick. Have a providor and an id. Rules trigger event-handling functions as needed.
+func Rule_ApplyPhysics();
+func Rule_CollisionEvents();
+func Rule_BoundCheck_Entities();
+func Rule_BoundCheck_Entity_Player();
+
+type Scene_type struct{
 
 
 

@@ -33,11 +33,11 @@ message Application{
 		State state = 1;
 		uint64 iterations = 2;
 		uint64 frames = 3;
-		ClientSettings settngs = 4;
+		ClientSettings settings = 4;
 		repeated Thread threads = 5;
 		Server server{
 			Engine engine{ //The Game
-				Simulation simulation{
+				Simulation simulation{ //The System
 					uint32 state;
 					float speed;
 					repeated Rule rules{
